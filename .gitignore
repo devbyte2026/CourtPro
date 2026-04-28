@@ -6,8 +6,8 @@
 .pnp.*
 .yarn/*
 !.yarn/patches
-!.yarn/plugins
 !.yarn/releases
+!.yarn/plugins
 !.yarn/versions
 
 # testing
@@ -22,7 +22,7 @@
 
 # misc
 .DS_Store
-*.pem
+Thumbs.db
 
 # debug
 npm-debug.log*
@@ -30,8 +30,12 @@ yarn-debug.log*
 yarn-error.log*
 .pnpm-debug.log*
 
-# env files (can opt-in for committing if needed)
-.env*
+# env files
+.env
+.env.local
+.env.development.local
+.env.test.local
+.env.production.local
 
 # vercel
 .vercel
@@ -39,3 +43,22 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# Supabase
+supabase/.temp/
+supabase/seed.sql
+
+# Upstash / Redis secrets
+.upstash/
+
+# Keys y secrets
+*.pem
+*.key
+*.p12
+
+# IDE
+.vscode/
+.idea/
+
+# Husky
+.husky/

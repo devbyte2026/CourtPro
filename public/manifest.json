@@ -1,0 +1,26 @@
+{
+  "name": "CanchaPro",
+  "short_name": "CanchaPro",
+  "description": "Sistema de reservas para complejos deportivos",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#078930",
+  "icons": [
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["sports", "business"],
+  "screenshots": [],
+  "prefer_related_applications": false
+}

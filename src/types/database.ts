@@ -13,14 +13,19 @@ export interface Tenant {
   name: string;
   description: string | null;
   address: string | null;
+  city: string | null;
+  phone: string | null;
   logo_url: string | null;
   cover_url: string | null;
+  photos: string[];
   plan: TenantPlan;
   status: TenantStatus;
   mp_access_token: string | null;
   mp_user_id: string | null;
   branding_config: BrandingConfig | null;
   cancellation_policy: CancellationPolicy | null;
+  domain_verified_at: string | null;
+  domain_verification_token: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -89,6 +94,7 @@ export interface PricingRule {
   start_time: string;
   end_time: string;
   price_modifier: number;
+  label: string | null;
   is_active: boolean;
   created_at: string;
 }

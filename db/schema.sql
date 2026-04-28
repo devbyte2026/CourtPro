@@ -1,17 +1,5 @@
--- =============================================================================
--- CANCHAPRO - SCHEMA SQL COMPLETO
--- Multi-tenant SaaS para reservas de complejos deportivos
--- =============================================================================
-
--- =============================================================================
--- EXTENSIONS
--- =============================================================================
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 CREATE EXTENSION IF NOT EXISTS "pgcrypto";
-
--- =============================================================================
--- ENUMS
--- =============================================================================
 
 CREATE TYPE tenant_plan AS ENUM ('start', 'pro', 'premium');
 CREATE TYPE tenant_status AS ENUM ('active', 'suspended', 'pending');
@@ -20,10 +8,6 @@ CREATE TYPE booking_status AS ENUM ('pending', 'confirmed', 'cancelled', 'comple
 CREATE TYPE payment_status AS ENUM ('pending', 'approved', 'rejected', 'refunded', 'cancelled');
 CREATE TYPE sport_type AS ENUM ('futbol', 'padel', 'volleyball', 'tennis', 'basketball', 'other');
 CREATE TYPE blocked_reason AS ENUM ('maintenance', 'tournament', 'private', 'other');
-
--- =============================================================================
--- TENANTS (Complejos)
--- =============================================================================
 
 CREATE TABLE tenants (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -57,26 +41,6 @@ CREATE INDEX idx_tenants_subdomain ON tenants(subdomain);
 CREATE INDEX idx_tenants_status ON tenants(status);
 CREATE INDEX idx_tenants_plan ON tenants(plan);
 
--- =============================================================================
--- TENANT_USERS (Relación usuarios-complejos)
--- =============================================================================
-
-CREATE TABLE tenant_users (
-    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
-    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
-    role user_role NOT NULL DEFAULT 'staff',
-    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(tenant_id, user_id)
-);
-
-CREATE INDEX idx_tenant_users_tenant_id ON tenant_users(tenant_id);
-CREATE INDEX idx_tenant_users_user_id ON tenant_users(user_id);
-
--- =============================================================================
--- VENUES (Sedes de un tenant)
--- =============================================================================
-
 CREATE TABLE venues (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -93,10 +57,6 @@ CREATE TABLE venues (
 
 CREATE INDEX idx_venues_tenant_id ON venues(tenant_id);
 CREATE INDEX idx_venues_is_active ON venues(is_active);
-
--- =============================================================================
--- COURTS (Canchas)
--- =============================================================================
 
 CREATE TABLE courts (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -118,10 +78,6 @@ CREATE INDEX idx_courts_tenant_id ON courts(tenant_id);
 CREATE INDEX idx_courts_sport_type ON courts(sport_type);
 CREATE INDEX idx_courts_is_active ON courts(is_active);
 
--- =============================================================================
--- SCHEDULES (Horarios de operación por día de semana)
--- =============================================================================
-
 CREATE TABLE schedules (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     court_id UUID NOT NULL REFERENCES courts(id) ON DELETE CASCADE,
@@ -135,10 +91,6 @@ CREATE TABLE schedules (
 
 CREATE INDEX idx_schedules_court_id ON schedules(court_id);
 CREATE INDEX idx_schedules_day_of_week ON schedules(day_of_week);
-
--- =============================================================================
--- PRICING_RULES (Precios variables por franja horaria)
--- =============================================================================
 
 CREATE TABLE pricing_rules (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -157,9 +109,17 @@ CREATE INDEX idx_pricing_rules_tenant_id ON pricing_rules(tenant_id);
 CREATE INDEX idx_pricing_rules_court_id ON pricing_rules(court_id);
 CREATE INDEX idx_pricing_rules_is_active ON pricing_rules(is_active);
 
--- =============================================================================
--- CUSTOMERS (Jugadores finales - scoped al tenant)
--- =============================================================================
+CREATE TABLE tenant_users (
+    id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
+    user_id UUID NOT NULL REFERENCES auth.users(id) ON DELETE CASCADE,
+    role user_role NOT NULL DEFAULT 'staff',
+    created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
+    UNIQUE(tenant_id, user_id)
+);
+
+CREATE INDEX idx_tenant_users_tenant_id ON tenant_users(tenant_id);
+CREATE INDEX idx_tenant_users_user_id ON tenant_users(user_id);
 
 CREATE TABLE customers (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -180,10 +140,6 @@ CREATE INDEX idx_customers_user_id ON customers(user_id);
 CREATE INDEX idx_customers_email ON customers(email);
 CREATE INDEX idx_customers_phone ON customers(phone);
 
--- =============================================================================
--- BOOKINGS (Reservas)
--- =============================================================================
-
 CREATE TABLE bookings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -203,9 +159,10 @@ CREATE TABLE bookings (
     mp_merchant_order_id VARCHAR(100),
     created_by UUID REFERENCES auth.users(id),
     created_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW(),
-    UNIQUE(court_id, date, start_time, status) WHERE status IN ('pending', 'confirmed')
+    updated_at TIMESTAMPTZ NOT NULL DEFAULT NOW()
 );
+
+CREATE UNIQUE INDEX idx_bookings_no_overlap ON bookings (court_id, date, start_time) WHERE status IN ('pending', 'confirmed');
 
 CREATE INDEX idx_bookings_tenant_id ON bookings(tenant_id);
 CREATE INDEX idx_bookings_court_id ON bookings(court_id);
@@ -214,10 +171,6 @@ CREATE INDEX idx_bookings_date ON bookings(date);
 CREATE INDEX idx_bookings_status ON bookings(status);
 CREATE INDEX idx_bookings_expires_at ON bookings(expires_at) WHERE expires_at IS NOT NULL;
 CREATE INDEX idx_bookings_mp_payment_id ON bookings(mp_payment_id) WHERE mp_payment_id IS NOT NULL;
-
--- =============================================================================
--- PAYMENTS (Pagos)
--- =============================================================================
 
 CREATE TABLE payments (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -237,10 +190,6 @@ CREATE INDEX idx_payments_booking_id ON payments(booking_id);
 CREATE INDEX idx_payments_tenant_id ON payments(tenant_id);
 CREATE INDEX idx_payments_status ON payments(status);
 CREATE INDEX idx_payments_mp_payment_id ON payments(mp_payment_id) WHERE mp_payment_id IS NOT NULL;
-
--- =============================================================================
--- RECURRING_BOOKINGS (Reservas recurrentes - grupos fijos)
--- =============================================================================
 
 CREATE TABLE recurring_bookings (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -267,10 +216,6 @@ CREATE INDEX idx_recurring_court_id ON recurring_bookings(court_id);
 CREATE INDEX idx_recurring_customer_id ON recurring_bookings(customer_id);
 CREATE INDEX idx_recurring_is_active ON recurring_bookings(is_active);
 
--- =============================================================================
--- WAITLIST (Lista de espera)
--- =============================================================================
-
 CREATE TABLE waitlist (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -290,10 +235,6 @@ CREATE INDEX idx_waitlist_customer_id ON waitlist(customer_id);
 CREATE INDEX idx_waitlist_date ON waitlist(date);
 CREATE INDEX idx_waitlist_notified_at ON waitlist(notified_at) WHERE notified_at IS NULL;
 
--- =============================================================================
--- SUBSCRIPTIONS (Suscripciones de tenants al SaaS)
--- =============================================================================
-
 CREATE TABLE subscriptions (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID NOT NULL REFERENCES tenants(id) ON DELETE CASCADE,
@@ -312,10 +253,6 @@ CREATE INDEX idx_subscriptions_tenant_id ON subscriptions(tenant_id);
 CREATE INDEX idx_subscriptions_status ON subscriptions(status);
 CREATE INDEX idx_subscriptions_current_period_end ON subscriptions(current_period_end);
 
--- =============================================================================
--- AUDIT_LOGS (Logs de auditoría)
--- =============================================================================
-
 CREATE TABLE audit_logs (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
     tenant_id UUID REFERENCES tenants(id) ON DELETE SET NULL,
@@ -333,10 +270,6 @@ CREATE INDEX idx_audit_logs_tenant_id ON audit_logs(tenant_id);
 CREATE INDEX idx_audit_logs_user_id ON audit_logs(user_id);
 CREATE INDEX idx_audit_logs_action ON audit_logs(action);
 CREATE INDEX idx_audit_logs_created_at ON audit_logs(created_at);
-
--- =============================================================================
--- BLOCKED_SLOTS (Horarios bloqueados - mantenimiento, torneos)
--- =============================================================================
 
 CREATE TABLE blocked_slots (
     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
@@ -357,11 +290,279 @@ CREATE INDEX idx_blocked_slots_court_id ON blocked_slots(court_id);
 CREATE INDEX idx_blocked_slots_date ON blocked_slots(date);
 CREATE INDEX idx_blocked_slots_reason ON blocked_slots(reason);
 
--- =============================================================================
--- FUNCTIONS
--- =============================================================================
+ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
+ALTER TABLE tenant_users ENABLE ROW LEVEL SECURITY;
+ALTER TABLE venues ENABLE ROW LEVEL SECURITY;
+ALTER TABLE courts ENABLE ROW LEVEL SECURITY;
+ALTER TABLE schedules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE pricing_rules ENABLE ROW LEVEL SECURITY;
+ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
+ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
+ALTER TABLE recurring_bookings ENABLE ROW LEVEL SECURITY;
+ALTER TABLE waitlist ENABLE ROW LEVEL SECURITY;
+ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
+ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
+ALTER TABLE blocked_slots ENABLE ROW LEVEL SECURITY;
 
--- Función para actualizar timestamps automáticamente
+CREATE POLICY "Tenants are viewable by their users"
+    ON tenants FOR SELECT
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users WHERE tenant_id = tenants.id
+        )
+    );
+
+CREATE POLICY "Tenants are updatable by owners and super_admin"
+    ON tenants FOR UPDATE
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users
+            WHERE tenant_id = tenants.id AND role IN ('owner', 'super_admin')
+        )
+    );
+
+CREATE POLICY "Tenant users viewable by members"
+    ON tenant_users FOR SELECT
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users tu WHERE tu.tenant_id = tenant_users.tenant_id
+        )
+    );
+
+CREATE POLICY "Tenant users insertable by owners"
+    ON tenant_users FOR INSERT
+    WITH CHECK (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users
+            WHERE tenant_id = tenant_users.tenant_id AND role = 'owner'
+        )
+    );
+
+CREATE POLICY "Tenant users deletable by owners"
+    ON tenant_users FOR DELETE
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users
+            WHERE tenant_id = tenant_users.tenant_id AND role = 'owner'
+        )
+    );
+
+CREATE POLICY "Venues viewable by tenant members"
+    ON venues FOR SELECT
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users WHERE tenant_id = venues.tenant_id
+        )
+    );
+
+CREATE POLICY "Venues manageable by tenant owners and staff"
+    ON venues FOR ALL
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users
+            WHERE tenant_id = venues.tenant_id AND role IN ('owner', 'staff')
+        )
+    );
+
+CREATE POLICY "Courts viewable by tenant members"
+    ON courts FOR SELECT
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users WHERE tenant_id = courts.tenant_id
+        )
+    );
+
+CREATE POLICY "Courts manageable by tenant owners and staff"
+    ON courts FOR ALL
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users
+            WHERE tenant_id = courts.tenant_id AND role IN ('owner', 'staff')
+        )
+    );
+
+CREATE POLICY "Schedules viewable by tenant members"
+    ON schedules FOR SELECT
+    USING (
+        auth.uid() IN (
+            SELECT tu.user_id FROM tenant_users tu
+            JOIN courts c ON c.id = schedules.court_id
+            WHERE tu.tenant_id = c.tenant_id
+        )
+    );
+
+CREATE POLICY "Schedules manageable by tenant owners and staff"
+    ON schedules FOR ALL
+    USING (
+        auth.uid() IN (
+            SELECT tu.user_id FROM tenant_users tu
+            JOIN courts c ON c.id = schedules.court_id
+            WHERE tu.tenant_id = c.tenant_id AND tu.role IN ('owner', 'staff')
+        )
+    );
+
+CREATE POLICY "Pricing rules viewable by tenant members"
+    ON pricing_rules FOR SELECT
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users WHERE tenant_id = pricing_rules.tenant_id
+        )
+    );
+
+CREATE POLICY "Pricing rules manageable by tenant owners and staff"
+    ON pricing_rules FOR ALL
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users
+            WHERE tenant_id = pricing_rules.tenant_id AND role IN ('owner', 'staff')
+        )
+    );
+
+CREATE POLICY "Customers viewable by tenant members"
+    ON customers FOR SELECT
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users WHERE tenant_id = customers.tenant_id
+        )
+    );
+
+CREATE POLICY "Customers manageable by tenant owners and staff"
+    ON customers FOR ALL
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users
+            WHERE tenant_id = customers.tenant_id AND role IN ('owner', 'staff')
+        )
+    );
+
+CREATE POLICY "Bookings viewable by tenant members"
+    ON bookings FOR SELECT
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users WHERE tenant_id = bookings.tenant_id
+        )
+        OR auth.uid() = bookings.created_by
+    );
+
+CREATE POLICY "Bookings insertable by tenant members"
+    ON bookings FOR INSERT
+    WITH CHECK (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users WHERE tenant_id = bookings.tenant_id
+        )
+    );
+
+CREATE POLICY "Bookings updatable by tenant owners and staff"
+    ON bookings FOR UPDATE
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users
+            WHERE tenant_id = bookings.tenant_id AND role IN ('owner', 'staff')
+        )
+    );
+
+CREATE POLICY "Bookings deletable by tenant owners and staff"
+    ON bookings FOR DELETE
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users
+            WHERE tenant_id = bookings.tenant_id AND role IN ('owner', 'staff')
+        )
+    );
+
+CREATE POLICY "Payments viewable by tenant members"
+    ON payments FOR SELECT
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users WHERE tenant_id = payments.tenant_id
+        )
+    );
+
+CREATE POLICY "Payments insertable by system"
+    ON payments FOR INSERT
+    WITH CHECK (true);
+
+CREATE POLICY "Payments updatable by tenant owners and staff"
+    ON payments FOR UPDATE
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users
+            WHERE tenant_id = payments.tenant_id AND role IN ('owner', 'staff')
+        )
+    );
+
+CREATE POLICY "Recurring bookings viewable by tenant members"
+    ON recurring_bookings FOR SELECT
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users WHERE tenant_id = recurring_bookings.tenant_id
+        )
+    );
+
+CREATE POLICY "Recurring bookings manageable by tenant owners and staff"
+    ON recurring_bookings FOR ALL
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users
+            WHERE tenant_id = recurring_bookings.tenant_id AND role IN ('owner', 'staff')
+        )
+    );
+
+CREATE POLICY "Waitlist viewable by tenant members"
+    ON waitlist FOR SELECT
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users WHERE tenant_id = waitlist.tenant_id
+        )
+    );
+
+CREATE POLICY "Waitlist manageable by tenant owners and staff"
+    ON waitlist FOR ALL
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users
+            WHERE tenant_id = waitlist.tenant_id AND role IN ('owner', 'staff')
+        )
+    );
+
+CREATE POLICY "Subscriptions viewable by tenant members"
+    ON subscriptions FOR SELECT
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users WHERE tenant_id = subscriptions.tenant_id
+        )
+    );
+
+CREATE POLICY "Audit logs viewable by tenant owners"
+    ON audit_logs FOR SELECT
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users
+            WHERE tenant_id = audit_logs.tenant_id AND role = 'owner'
+        )
+        OR auth.uid() IN (
+            SELECT user_id FROM tenant_users WHERE role = 'super_admin'
+        )
+    );
+
+CREATE POLICY "Blocked slots viewable by tenant members"
+    ON blocked_slots FOR SELECT
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users WHERE tenant_id = blocked_slots.tenant_id
+        )
+    );
+
+CREATE POLICY "Blocked slots manageable by tenant owners and staff"
+    ON blocked_slots FOR ALL
+    USING (
+        auth.uid() IN (
+            SELECT user_id FROM tenant_users
+            WHERE tenant_id = blocked_slots.tenant_id AND role IN ('owner', 'staff')
+        )
+    );
+
 CREATE OR REPLACE FUNCTION update_updated_at()
 RETURNS TRIGGER AS $$
 BEGIN
@@ -370,7 +571,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Función para verificar disponibilidad de horario
 CREATE OR REPLACE FUNCTION check_court_availability(
     p_court_id UUID,
     p_date DATE,
@@ -395,7 +595,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Función para verificar slots bloqueados
 CREATE OR REPLACE FUNCTION check_blocked_slot(
     p_court_id UUID,
     p_date DATE,
@@ -417,7 +616,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Función para expirar bookings pending vencidos
 CREATE OR REPLACE FUNCTION expire_pending_bookings()
 RETURNS INTEGER AS $$
 DECLARE
@@ -433,7 +631,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Función para notificar a waitlist cuando se libera un horario
 CREATE OR REPLACE FUNCTION notify_waitlist(
     p_court_id UUID,
     p_date DATE,
@@ -462,7 +659,6 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
--- Trigger para actualizar updated_at
 CREATE TRIGGER update_tenants_updated_at
     BEFORE UPDATE ON tenants
     FOR EACH ROW
@@ -502,366 +698,6 @@ CREATE TRIGGER update_subscriptions_updated_at
     BEFORE UPDATE ON subscriptions
     FOR EACH ROW
     EXECUTE FUNCTION update_updated_at();
-
--- =============================================================================
--- ROW LEVEL SECURITY (RLS)
--- =============================================================================
-
--- Habilitar RLS en todas las tablas
-ALTER TABLE tenants ENABLE ROW LEVEL SECURITY;
-ALTER TABLE tenant_users ENABLE ROW LEVEL SECURITY;
-ALTER TABLE venues ENABLE ROW LEVEL SECURITY;
-ALTER TABLE courts ENABLE ROW LEVEL SECURITY;
-ALTER TABLE schedules ENABLE ROW LEVEL SECURITY;
-ALTER TABLE pricing_rules ENABLE ROW LEVEL SECURITY;
-ALTER TABLE customers ENABLE ROW LEVEL SECURITY;
-ALTER TABLE bookings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE payments ENABLE ROW LEVEL SECURITY;
-ALTER TABLE recurring_bookings ENABLE ROW LEVEL SECURITY;
-ALTER TABLE waitlist ENABLE ROW LEVEL SECURITY;
-ALTER TABLE subscriptions ENABLE ROW LEVEL SECURITY;
-ALTER TABLE audit_logs ENABLE ROW LEVEL SECURITY;
-ALTER TABLE blocked_slots ENABLE ROW LEVEL SECURITY;
-
--- =============================================================================
--- RLS POLICIES - TENANTS
--- =============================================================================
-
-CREATE POLICY "Tenants are viewable by their users"
-    ON tenants FOR SELECT
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users WHERE tenant_id = tenants.id
-        )
-    );
-
-CREATE POLICY "Tenants are updatable by owners and super_admin"
-    ON tenants FOR UPDATE
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users
-            WHERE tenant_id = tenants.id AND role IN ('owner', 'super_admin')
-        )
-    );
-
--- =============================================================================
--- RLS POLICIES - TENANT_USERS
--- =============================================================================
-
-CREATE POLICY "Tenant users viewable by members"
-    ON tenant_users FOR SELECT
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users tu WHERE tu.tenant_id = tenant_users.tenant_id
-        )
-    );
-
-CREATE POLICY "Tenant users insertable by owners"
-    ON tenant_users FOR INSERT
-    WITH CHECK (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users
-            WHERE tenant_id = tenant_users.tenant_id AND role = 'owner'
-        )
-    );
-
-CREATE POLICY "Tenant users deletable by owners"
-    ON tenant_users FOR DELETE
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users
-            WHERE tenant_id = tenant_users.tenant_id AND role = 'owner'
-        )
-    );
-
--- =============================================================================
--- RLS POLICIES - VENUES
--- =============================================================================
-
-CREATE POLICY "Venues viewable by tenant members"
-    ON venues FOR SELECT
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users WHERE tenant_id = venues.tenant_id
-        )
-    );
-
-CREATE POLICY "Venues manageable by tenant owners and staff"
-    ON venues FOR ALL
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users
-            WHERE tenant_id = venues.tenant_id AND role IN ('owner', 'staff')
-        )
-    );
-
--- =============================================================================
--- RLS POLICIES - COURTS
--- =============================================================================
-
-CREATE POLICY "Courts viewable by tenant members"
-    ON courts FOR SELECT
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users WHERE tenant_id = courts.tenant_id
-        )
-    );
-
-CREATE POLICY "Courts manageable by tenant owners and staff"
-    ON courts FOR ALL
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users
-            WHERE tenant_id = courts.tenant_id AND role IN ('owner', 'staff')
-        )
-    );
-
--- =============================================================================
--- RLS POLICIES - SCHEDULES
--- =============================================================================
-
-CREATE POLICY "Schedules viewable by tenant members"
-    ON schedules FOR SELECT
-    USING (
-        auth.uid() IN (
-            SELECT tu.user_id FROM tenant_users tu
-            JOIN courts c ON c.id = schedules.court_id
-            WHERE tu.tenant_id = c.tenant_id
-        )
-    );
-
-CREATE POLICY "Schedules manageable by tenant owners and staff"
-    ON schedules FOR ALL
-    USING (
-        auth.uid() IN (
-            SELECT tu.user_id FROM tenant_users tu
-            JOIN courts c ON c.id = schedules.court_id
-            WHERE tu.tenant_id = c.tenant_id AND tu.role IN ('owner', 'staff')
-        )
-    );
-
--- =============================================================================
--- RLS POLICIES - PRICING_RULES
--- =============================================================================
-
-CREATE POLICY "Pricing rules viewable by tenant members"
-    ON pricing_rules FOR SELECT
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users WHERE tenant_id = pricing_rules.tenant_id
-        )
-    );
-
-CREATE POLICY "Pricing rules manageable by tenant owners and staff"
-    ON pricing_rules FOR ALL
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users
-            WHERE tenant_id = pricing_rules.tenant_id AND role IN ('owner', 'staff')
-        )
-    );
-
--- =============================================================================
--- RLS POLICIES - CUSTOMERS
--- =============================================================================
-
-CREATE POLICY "Customers viewable by tenant members"
-    ON customers FOR SELECT
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users WHERE tenant_id = customers.tenant_id
-        )
-    );
-
-CREATE POLICY "Customers manageable by tenant owners and staff"
-    ON customers FOR ALL
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users
-            WHERE tenant_id = customers.tenant_id AND role IN ('owner', 'staff')
-        )
-    );
-
--- =============================================================================
--- RLS POLICIES - BOOKINGS
--- =============================================================================
-
-CREATE POLICY "Bookings viewable by tenant members"
-    ON bookings FOR SELECT
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users WHERE tenant_id = bookings.tenant_id
-        )
-        OR auth.uid() = bookings.created_by
-    );
-
-CREATE POLICY "Bookings insertable by tenant members"
-    ON bookings FOR INSERT
-    WITH CHECK (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users WHERE tenant_id = bookings.tenant_id
-        )
-    );
-
-CREATE POLICY "Bookings updatable by tenant owners and staff"
-    ON bookings FOR UPDATE
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users
-            WHERE tenant_id = bookings.tenant_id AND role IN ('owner', 'staff')
-        )
-    );
-
-CREATE POLICY "Bookings deletable by tenant owners and staff"
-    ON bookings FOR DELETE
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users
-            WHERE tenant_id = bookings.tenant_id AND role IN ('owner', 'staff')
-        )
-    );
-
--- =============================================================================
--- RLS POLICIES - PAYMENTS
--- =============================================================================
-
-CREATE POLICY "Payments viewable by tenant members"
-    ON payments FOR SELECT
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users WHERE tenant_id = payments.tenant_id
-        )
-    );
-
-CREATE POLICY "Payments insertable by system"
-    ON payments FOR INSERT
-    WITH CHECK (true);
-
-CREATE POLICY "Payments updatable by tenant owners and staff"
-    ON payments FOR UPDATE
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users
-            WHERE tenant_id = payments.tenant_id AND role IN ('owner', 'staff')
-        )
-    );
-
--- =============================================================================
--- RLS POLICIES - RECURRING_BOOKINGS
--- =============================================================================
-
-CREATE POLICY "Recurring bookings viewable by tenant members"
-    ON recurring_bookings FOR SELECT
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users WHERE tenant_id = recurring_bookings.tenant_id
-        )
-    );
-
-CREATE POLICY "Recurring bookings manageable by tenant owners and staff"
-    ON recurring_bookings FOR ALL
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users
-            WHERE tenant_id = recurring_bookings.tenant_id AND role IN ('owner', 'staff')
-        )
-    );
-
--- =============================================================================
--- RLS POLICIES - WAITLIST
--- =============================================================================
-
-CREATE POLICY "Waitlist viewable by tenant members"
-    ON waitlist FOR SELECT
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users WHERE tenant_id = waitlist.tenant_id
-        )
-    );
-
-CREATE POLICY "Waitlist manageable by tenant owners and staff"
-    ON waitlist FOR ALL
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users
-            WHERE tenant_id = waitlist.tenant_id AND role IN ('owner', 'staff')
-        )
-    );
-
--- =============================================================================
--- RLS POLICIES - SUBSCRIPTIONS
--- =============================================================================
-
-CREATE POLICY "Subscriptions viewable by tenant members"
-    ON subscriptions FOR SELECT
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users WHERE tenant_id = subscriptions.tenant_id
-        )
-    );
-
--- =============================================================================
--- RLS POLICIES - AUDIT_LOGS
--- =============================================================================
-
-CREATE POLICY "Audit logs viewable by tenant owners"
-    ON audit_logs FOR SELECT
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users
-            WHERE tenant_id = audit_logs.tenant_id AND role = 'owner'
-        )
-        OR auth.uid() IN (
-            SELECT user_id FROM tenant_users WHERE role = 'super_admin'
-        )
-    );
-
--- =============================================================================
--- RLS POLICIES - BLOCKED_SLOTS
--- =============================================================================
-
-CREATE POLICY "Blocked slots viewable by tenant members"
-    ON blocked_slots FOR SELECT
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users WHERE tenant_id = blocked_slots.tenant_id
-        )
-    );
-
-CREATE POLICY "Blocked slots manageable by tenant owners and staff"
-    ON blocked_slots FOR ALL
-    USING (
-        auth.uid() IN (
-            SELECT user_id FROM tenant_users
-            WHERE tenant_id = blocked_slots.tenant_id AND role IN ('owner', 'staff')
-        )
-    );
-
--- =============================================================================
--- SERVICE ROLE (BYPASS RLS)
--- Crear un rol separado para operaciones del servicio
--- =============================================================================
-
-CREATE ROLE service_role;
-GRANT service_role TO authenticated;
-GRANT ALL ON tenants TO service_role;
-GRANT ALL ON tenant_users TO service_role;
-GRANT ALL ON venues TO service_role;
-GRANT ALL ON courts TO service_role;
-GRANT ALL ON schedules TO service_role;
-GRANT ALL ON pricing_rules TO service_role;
-GRANT ALL ON customers TO service_role;
-GRANT ALL ON bookings TO service_role;
-GRANT ALL ON payments TO service_role;
-GRANT ALL ON recurring_bookings TO service_role;
-GRANT ALL ON waitlist TO service_role;
-GRANT ALL ON subscriptions TO service_role;
-GRANT ALL ON audit_logs TO service_role;
-GRANT ALL ON blocked_slots TO service_role;
-
--- =============================================================================
--- COMMENTS
--- =============================================================================
 
 COMMENT ON TABLE tenants IS 'Complejos deportivos registrados en la plataforma';
 COMMENT ON TABLE tenant_users IS 'Relación entre usuarios de Auth y los complejos que administran';

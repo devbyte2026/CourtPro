@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import Image from "next/image";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { Button } from "@/components/ui/button";
@@ -48,20 +49,20 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-cyan-50 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-cancha-hero p-4">
+      <Card className="w-full max-w-md bg-cancha-card border-cancha-border">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">
-            CanchaPro
-          </CardTitle>
-          <CardDescription className="text-center">
+          <div className="flex justify-center mb-4">
+            <Image src="/logo.svg" alt="CanchaPro" width={140} height={36} />
+          </div>
+          <CardDescription className="text-center text-slate-300 font-medium">
             Ingresá tu email para recibir un enlace de acceso
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleMagicLink} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-cancha-texto">Email</Label>
               <Input
                 id="email"
                 type="email"
@@ -70,6 +71,7 @@ export default function LoginPage() {
                 onChange={(e) => setEmail(e.target.value)}
                 required
                 disabled={isLoading}
+                className="bg-cancha-hero border-cancha-border text-white placeholder:text-slate-500 font-medium"
               />
             </div>
 
@@ -77,15 +79,19 @@ export default function LoginPage() {
               <div
                 className={`p-3 rounded-md text-sm ${
                   message.type === "success"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-red-100 text-red-800"
+                    ? "bg-cancha-lima/10 border border-cancha-lima/30 text-cancha-lima"
+                    : "bg-red-500/10 border border-red-500/30 text-red-400"
                 }`}
               >
                 {message.text}
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full bg-cancha-lima text-cancha-hero hover:bg-cancha-lima-hover font-bold transition-all duration-300 glow-lima-cta"
+              disabled={isLoading}
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -101,10 +107,10 @@ export default function LoginPage() {
           </form>
 
           <div className="mt-4 text-center text-sm">
-            <span className="text-muted-foreground">
+            <span className="text-slate-300 font-medium">
               ¿No tenés cuenta?{" "}
             </span>
-            <Link href="/signup" className="text-primary hover:underline">
+            <Link href="/signup" className="text-cancha-lima hover:text-cancha-lima-hover font-bold transition-colors">
               Crear cuenta
             </Link>
           </div>

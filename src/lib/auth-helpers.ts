@@ -53,6 +53,10 @@ export async function getTenantBySlug(slug: string): Promise<Tenant | null> {
 }
 
 export async function requireAuth() {
+  if (process.env.NEXT_PUBLIC_DEV_MODE === "true") {
+    return { id: "dev-user-id", email: "dev@canchapro.app" } as any;
+  }
+
   const user = await getCurrentUser();
 
   if (!user) {
@@ -63,6 +67,10 @@ export async function requireAuth() {
 }
 
 export async function requireTenantOwner(tenantId: string) {
+  if (process.env.NEXT_PUBLIC_DEV_MODE === "true") {
+    return { id: "dev-user-id", email: "dev@canchapro.app" } as any;
+  }
+
   const user = await requireAuth();
   const supabase = await createClient();
 
@@ -82,6 +90,10 @@ export async function requireTenantOwner(tenantId: string) {
 }
 
 export async function requireSuperAdmin() {
+  if (process.env.NEXT_PUBLIC_DEV_MODE === "true") {
+    return { id: "dev-user-id", email: "dev@canchapro.app" } as any;
+  }
+
   const user = await requireAuth();
   const supabase = await createClient();
 

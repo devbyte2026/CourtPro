@@ -63,22 +63,22 @@ export default function SignupPage() {
   };
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-green-50 to-cyan-50 p-4">
-      <Card className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center bg-[#0A1628] p-4">
+      <Card className="w-full max-w-md bg-[#1A2D47] border-[#1E3A5F]">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">
+          <CardTitle className="text-2xl font-bold text-center font-[family-name:var(--font-bebas-neue)] text-[#F0F4F8]">
             Crear cuenta
           </CardTitle>
-          <CardDescription className="text-center">
+          <CardDescription className="text-center text-[#6B7F94]">
             Registrate para administrar tu complejo deportivo
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleSignup} className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="name">Nombre completo</Label>
+              <Label htmlFor="name" className="text-[#F0F4F8]">Nombre completo</Label>
               <div className="relative">
-                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <User className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#6B7F94]" />
                 <Input
                   id="name"
                   type="text"
@@ -87,15 +87,15 @@ export default function SignupPage() {
                   onChange={(e) => setName(e.target.value)}
                   required
                   disabled={isLoading}
-                  className="pl-10"
+                  className="pl-10 bg-[#111F35] border-[#1E3A5F] text-[#F0F4F8] placeholder:text-[#6B7F94] focus:border-[#CAFF00] focus:ring-[#CAFF00]"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
+              <Label htmlFor="email" className="text-[#F0F4F8]">Email</Label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#6B7F94]" />
                 <Input
                   id="email"
                   type="email"
@@ -104,15 +104,15 @@ export default function SignupPage() {
                   onChange={(e) => setEmail(e.target.value)}
                   required
                   disabled={isLoading}
-                  className="pl-10"
+                  className="pl-10 bg-[#111F35] border-[#1E3A5F] text-[#F0F4F8] placeholder:text-[#6B7F94] focus:border-[#CAFF00] focus:ring-[#CAFF00]"
                 />
               </div>
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="password">Contraseña</Label>
+              <Label htmlFor="password" className="text-[#F0F4F8]">Contraseña</Label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+                <Lock className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-[#6B7F94]" />
                 <Input
                   id="password"
                   type="password"
@@ -122,7 +122,7 @@ export default function SignupPage() {
                   required
                   minLength={6}
                   disabled={isLoading}
-                  className="pl-10"
+                  className="pl-10 bg-[#111F35] border-[#1E3A5F] text-[#F0F4F8] placeholder:text-[#6B7F94] focus:border-[#CAFF00] focus:ring-[#CAFF00]"
                 />
               </div>
             </div>
@@ -131,15 +131,19 @@ export default function SignupPage() {
               <div
                 className={`p-3 rounded-md text-sm ${
                   message.type === "success"
-                    ? "bg-green-100 text-green-800"
-                    : "bg-red-100 text-red-800"
+                    ? "bg-[#CAFF00]/10 border border-[#CAFF00]/30 text-[#CAFF00]"
+                    : "bg-red-500/10 border border-red-500/30 text-red-400"
                 }`}
               >
                 {message.text}
               </div>
             )}
 
-            <Button type="submit" className="w-full" disabled={isLoading}>
+            <Button
+              type="submit"
+              className="w-full bg-[#CAFF00] text-[#0A1628] hover:bg-[#B8FF00] font-bold transition-all duration-300 shadow-[0_0_20px_rgba(202,255,0,0.4)]"
+              disabled={isLoading}
+            >
               {isLoading ? (
                 <>
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
@@ -152,10 +156,10 @@ export default function SignupPage() {
           </form>
 
           <div className="mt-4 text-center text-sm">
-            <span className="text-muted-foreground">
+            <span className="text-[#6B7F94]">
               ¿Ya tenés cuenta?{" "}
             </span>
-            <Link href="/login" className="text-primary hover:underline">
+            <Link href="/login" className="text-[#CAFF00] hover:text-[#B8FF00] font-bold transition-colors">
               Ingresar
             </Link>
           </div>

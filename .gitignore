@@ -62,3 +62,9 @@ supabase/seed.sql
 
 # Husky
 .husky/
+
+# OpenCode
+.opencode/
+
+# Plan de avance
+PLAN_DE_AVANCE.md

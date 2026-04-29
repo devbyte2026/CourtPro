@@ -6,6 +6,7 @@ import { ServiceWorkerRegistration } from "@/components/service-worker-registrat
 import { CookieBanner } from "@/components/cookie-banner";
 import { AnalyticsProvider } from "@/components/analytics/analytics-provider";
 import { ThemeProvider } from "@/components/theme-provider";
+import { ScrollToTop } from "@/components/scroll-to-top";
 
 const geistSans = Geist({
   variable: "--font-geist-sans",
@@ -63,6 +64,7 @@ export default function RootLayout({
           <AnalyticsProvider>
             {children}
           </AnalyticsProvider>
+          <ScrollToTop />
         </ThemeProvider>
       </body>
     </html>

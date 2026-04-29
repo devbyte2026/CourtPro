@@ -1,51 +1,33 @@
 "use client";
 
 import { useState } from "react";
-import { useRouter } from "next/navigation";
 import Link from "next/link";
 import { createClient } from "@/lib/db/supabase-browser";
 
-export default function LoginPage() {
-  const router = useRouter();
+export default function ForgotPasswordPage() {
   const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleReset = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    setError(null);
+    setMessage(null);
 
     try {
       const supabase = await createClient();
-      const { error: authError } = await supabase.auth.signInWithPassword({ email, password });
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: `${window.location.origin}/admin/reset-password`,
+      });
 
-      if (authError) {
-        setError("Email o contraseña incorrectos");
-        setIsLoading(false);
-        return;
-      }
-
-      const { data: { user } } = await supabase.auth.getUser();
-
-      if (user) {
-        const response = await fetch("/api/auth/me");
-        const { role, slug } = await response.json();
-
-        console.log("role:", role, "slug:", slug);
-
-        if (role === "owner" && slug) {
-          router.push(`/${slug}/admin`);
-        } else {
-          router.push("/admin");
-        }
+      if (error) {
+        setMessage({ type: "error", text: "No se pudo enviar el enlace. Verificá tu email." });
       } else {
-        router.push("/admin");
+        setMessage({ type: "success", text: "Revisá tu email para restablecer tu contraseña." });
       }
-      router.refresh();
     } catch {
-      setError("Email o contraseña incorrectos");
+      setMessage({ type: "error", text: "No se pudo enviar el enlace. Verificá tu email." });
+    } finally {
       setIsLoading(false);
     }
   };
@@ -87,10 +69,10 @@ export default function LoginPage() {
         <div className="relative z-10 w-full max-w-sm" style={{ animation: 'slideUp 0.5s ease forwards' }}>
           <img src="/logo.svg" alt="CanchaPro" className="h-10 mx-auto mb-8 lg:hidden" />
 
-          <h1 className="text-2xl font-black text-white text-center mb-2">INGRESAR</h1>
-          <p className="text-slate-400 text-center mb-8 font-medium">Ingresá tus datos para acceder a tu cuenta</p>
+          <h1 className="text-2xl font-black text-white text-center mb-2">RECUPERAR CONTRASEÑA</h1>
+          <p className="text-slate-400 text-center mb-8 font-medium">Ingresá tu email y te enviaremos un enlace para restablecerla</p>
 
-          <form onSubmit={handleLogin} className="space-y-4">
+          <form onSubmit={handleReset} className="space-y-4">
             <div>
               <label className="text-slate-300 text-sm font-semibold mb-2 block">Email</label>
               <input
@@ -104,22 +86,15 @@ export default function LoginPage() {
               />
             </div>
 
-            <div>
-              <label className="text-slate-300 text-sm font-semibold mb-2 block">Contraseña</label>
-              <input
-                type="password"
-                placeholder="Tu contraseña"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                disabled={isLoading}
-                className="w-full bg-[#111F35] border border-[#1E3A5F] rounded-xl px-4 py-3.5 text-white font-medium placeholder:text-slate-600 focus:border-[#CAFF00] focus:outline-none focus:ring-2 focus:ring-[#CAFF00]/20 transition-all duration-300"
-              />
-            </div>
-
-            {error && (
-              <div className="p-3 rounded-xl text-sm bg-red-500/10 border border-red-500/30 text-red-400">
-                {error}
+            {message && (
+              <div
+                className={`p-3 rounded-xl text-sm ${
+                  message.type === "success"
+                    ? "bg-[#CAFF00]/10 border border-[#CAFF00]/30 text-[#CAFF00]"
+                    : "bg-red-500/10 border border-red-500/30 text-red-400"
+                }`}
+              >
+                {message.text}
               </div>
             )}
 
@@ -134,24 +109,17 @@ export default function LoginPage() {
                     <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"/>
                     <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v8z"/>
                   </svg>
-                  Ingresando...
+                  Enviando...
                 </span>
               ) : (
-                "Ingresar"
+                "Enviar enlace"
               )}
             </button>
           </form>
 
-          <div className="text-center mt-4">
-            <Link href="/forgot-password" className="text-sm text-[#CAFF00] hover:underline font-medium">
-              ¿Olvidaste tu contraseña?
-            </Link>
-          </div>
-
           <p className="text-center text-slate-400 mt-6 font-medium">
-            ¿No tenés cuenta?{" "}
-            <Link href="/signup" className="text-[#CAFF00] font-bold hover:underline">
-              Crear cuenta
+            <Link href="/login" className="text-[#CAFF00] font-bold hover:underline">
+              Volver al login
             </Link>
           </p>
         </div>

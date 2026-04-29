@@ -12,6 +12,7 @@ import {
   Check,
   Star,
   ArrowRight,
+  ChevronDown,
   ChevronRight,
   Menu,
   X,
@@ -96,8 +97,8 @@ const steps = [
 const plans = [
   {
     name: "Start",
-    monthlyPrice: 10000,
-    annualPrice: 96000,
+    monthlyPrice: 30000,
+    annualPrice: 288000,
     description: "Ideal para comenzar",
     features: [
       "1 sede",
@@ -108,8 +109,8 @@ const plans = [
   },
   {
     name: "Pro",
-    monthlyPrice: 25000,
-    annualPrice: 240000,
+    monthlyPrice: 50000,
+    annualPrice: 480000,
     description: "El más popular",
     features: [
       "1 sede",
@@ -122,8 +123,8 @@ const plans = [
   },
   {
     name: "Premium",
-    monthlyPrice: 50000,
-    annualPrice: 480000,
+    monthlyPrice: 90000,
+    annualPrice: 864000,
     description: "Para complejos grandes",
     features: [
       "Multi-sede",
@@ -243,7 +244,7 @@ function FeatureCard({
   return (
     <div
       ref={ref}
-      className={`p-6 rounded-lg bg-cancha-card border border-cancha-border transition-all duration-300 cursor-pointer hover:border-cancha-lima hover:glow-lima-hover scroll-animate ${
+      className={`p-6 rounded-2xl bg-cancha-card border border-cancha-border transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:border-[#CAFF00] hover:shadow-[0_0_25px_rgba(202,255,0,0.15)] scroll-animate ${
         isVisible ? "visible" : ""
       }`}
     >
@@ -314,12 +315,12 @@ function PricingCard({
   return (
     <div
       ref={ref}
-      className={`p-6 rounded-lg relative transition-all duration-300 cursor-pointer scroll-animate ${
+      className={`p-6 rounded-2xl relative transition-all duration-300 cursor-pointer scroll-animate ${
         isVisible ? "visible" : ""
       } ${
         highlighted
           ? "bg-cancha-card border-2 border-cancha-lima glow-lima"
-          : "bg-cancha-card border border-cancha-border hover:border-cancha-lima"
+          : "bg-cancha-card border border-cancha-border hover:-translate-y-1 hover:border-[#CAFF00] hover:shadow-[0_0_25px_rgba(202,255,0,0.15)]"
       }`}
       style={{ transitionDelay: `${delay}ms` }}
     >
@@ -384,7 +385,7 @@ function TestimonialCard({
   return (
     <div
       ref={ref}
-      className={`p-6 rounded-lg bg-cancha-card border border-cancha-border transition-all duration-300 cursor-pointer hover:border-cancha-lima scroll-animate ${
+      className={`p-6 rounded-2xl bg-cancha-card border border-cancha-border transition-all duration-300 cursor-pointer hover:-translate-y-1 hover:border-[#CAFF00] hover:shadow-[0_0_25px_rgba(202,255,0,0.15)] scroll-animate ${
         isVisible ? "visible" : ""
       }`}
       style={{ transitionDelay: `${delay}ms` }}
@@ -410,14 +411,28 @@ function TestimonialCard({
   );
 }
 
-function AnimatedSection({ children, className = "", id }: { children: React.ReactNode; className?: string; id?: string }) {
+function AnimatedSection({ children, className = "", id, style }: { children: React.ReactNode; className?: string; id?: string; style?: React.CSSProperties }) {
   const { ref, isVisible } = useScrollAnimation();
 
   return (
-    <section id={id} ref={ref as React.RefObject<HTMLElement>} className={`scroll-animate ${isVisible ? "visible" : ""} ${className}`}>
+    <section id={id} ref={ref as React.RefObject<HTMLElement>} className={`scroll-animate ${isVisible ? "visible" : ""} ${className}`} style={style}>
       {children}
     </section>
   );
+}
+
+function useInView(threshold = 0.1) {
+  const ref = useRef(null);
+  const [inView, setInView] = useState(false);
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => { if (entry.isIntersecting) setInView(true); },
+      { threshold }
+    );
+    if (ref.current) observer.observe(ref.current);
+    return () => observer.disconnect();
+  }, []);
+  return { ref, inView };
 }
 
 export default function LandingPage() {
@@ -434,180 +449,208 @@ export default function LandingPage() {
 
   return (
     <div className="min-h-screen bg-cancha-hero text-cancha-texto">
-      <header
-        className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-          scrolled ? "bg-cancha-hero/80 backdrop-blur-md" : "bg-transparent"
-        }`}
-      >
-        <div className="max-w-6xl mx-auto px-4">
-          <nav className="border border-cancha-border rounded-lg px-6 py-4 flex items-center justify-between transition-all duration-300 bg-cancha-hero/90 backdrop-blur-md">
-            <Link href="/" className="flex items-center gap-2 cursor-pointer">
-              <Image src="/logo.svg" alt="CanchaPro" width={140} height={36} priority />
-            </Link>
+      <nav className="fixed top-0 left-0 right-0 z-50 bg-[#0A1628]/95 backdrop-blur-md border-b border-[#1E3A5F]">
+        <div className="max-w-7xl mx-auto px-6 h-16 flex items-center justify-between">
+          <Link href="/" className="flex items-center gap-2 cursor-pointer">
+            <Image src="/logo.svg" alt="CanchaPro" width={140} height={36} priority />
+          </Link>
 
-            <div className="hidden md:flex items-center gap-8">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  className="text-slate-300 font-semibold tracking-wide hover:text-[#CAFF00] transition-colors duration-150 cursor-pointer"
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </div>
-
-            <div className="flex items-center gap-4">
+          <div className="hidden md:flex items-center gap-8">
+            {navLinks.map((link) => (
               <Link
-                href="/login"
-                className="text-sm text-cancha-lima hover:text-cancha-lima-hover cursor-pointer transition-colors font-bold"
+                key={link.href}
+                href={link.href}
+                className="text-slate-300 font-semibold tracking-wide hover:text-[#CAFF00] transition-colors duration-150 cursor-pointer"
               >
-                Login
+                {link.label}
               </Link>
-              <Link href="/signup">
-                <Button className="bg-cancha-lima text-cancha-hero hover:bg-cancha-lima-hover font-bold cursor-pointer hidden sm:flex transition-all duration-300 glow-lima-cta">
-                  Crear cuenta
-                </Button>
-              </Link>
-              <button
-                onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-                className="md:hidden p-2 cursor-pointer text-cancha-texto"
-                aria-label="Menu"
-              >
-                {mobileMenuOpen ? <X className="h-6 w-6" /> : <Menu className="h-6 w-6" />}
-              </button>
-            </div>
-          </nav>
-
-          {mobileMenuOpen && (
-            <div className="md:hidden mt-2 bg-cancha-hero/90 backdrop-blur-md border border-cancha-border rounded-lg p-4">
-              {navLinks.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileMenuOpen(false)}
-                  className="block py-3 text-sm text-slate-300 hover:text-cancha-texto cursor-pointer transition-colors font-medium"
-                >
-                  {link.label}
-                </Link>
-              ))}
-              <hr className="my-3 border-cancha-border" />
-              <Link
-                href="/login"
-                className="block py-3 text-sm text-cancha-lima cursor-pointer font-bold"
-              >
-                Login
-              </Link>
-            </div>
-          )}
-        </div>
-      </header>
-
-      <main>
-        <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 pb-16">
-          <div
-            className="absolute inset-0 opacity-[0.06]"
-            dangerouslySetInnerHTML={{ __html: COURT_LINES_SVG }}
-          />
-
-          <div className="absolute inset-0 bg-gradient-to-b from-cancha-hero via-transparent to-cancha-hero" />
-
-          <div className="absolute inset-0 overflow-hidden">
-            <div
-              className="absolute inset-0 animate-gradient"
-              style={{
-                background: "radial-gradient(ellipse at 50% 50%, rgba(202, 255, 0, 0.15) 0%, rgba(10, 22, 40, 0) 50%)",
-              }}
-            />
+            ))}
           </div>
 
-          <div className="relative z-10 max-w-6xl mx-auto px-4 text-center">
-            <div className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-cancha-lima/10 border border-cancha-lima/30 mb-8 scroll-animate visible">
-              <span className="w-2 h-2 rounded-full bg-cancha-lima animate-pulse" />
-              <span className="text-xs font-bold text-cancha-lima uppercase tracking-wider">
-                Reservas Online · AR
-              </span>
-            </div>
+          <div className="flex items-center gap-3">
+            <Link href="/login" className="text-[#CAFF00] font-semibold cursor-pointer">
+              Login
+            </Link>
+            <button
+              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
+              className="md:hidden text-white cursor-pointer"
+            >
+              {mobileMenuOpen ? <X size={24} /> : <Menu size={24} />}
+            </button>
+            <Link href="/signup" className="hidden md:block bg-[#CAFF00] text-[#0A1628] font-black px-5 py-2 rounded-lg">
+              Crear cuenta
+            </Link>
+          </div>
+        </div>
 
-            <h1 className="text-[clamp(4rem,10vw,9rem)] font-black mb-6 leading-none tracking-[-0.02em] font-[family-name:var(--font-bebas-neue)] scroll-animate visible">
-              <span className="text-cancha-texto">TU CANCHA,</span>
-              <br />
-              <span className="text-cancha-lima">CUANDO QUIERAS</span>
+        {mobileMenuOpen && (
+          <div className="md:hidden fixed inset-x-0 top-16 z-40 bg-[#0A1628]/98 backdrop-blur-md border-t border-[#1E3A5F] px-4 py-4 overflow-hidden">
+            {navLinks.map((link) => (
+              <Link
+                key={link.href}
+                href={link.href}
+                onClick={() => setMobileMenuOpen(false)}
+                className="block py-3 text-slate-300 hover:text-[#CAFF00] cursor-pointer font-medium transition-colors"
+              >
+                {link.label}
+              </Link>
+            ))}
+            <hr className="my-3 border-[#1E3A5F]" />
+            <Link href="/login" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-[#CAFF00] font-semibold">
+              Login
+            </Link>
+            <Link href="/signup" onClick={() => setMobileMenuOpen(false)} className="block py-3 text-white font-semibold">
+              Crear cuenta
+            </Link>
+          </div>
+        )}
+      </nav>
+
+      <main>
+        <section className="relative min-h-[100svh] md:min-h-screen flex flex-col items-center justify-center overflow-hidden">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ zIndex: 0 }}
+          >
+            <source src="/videos/hero-futbol.mp4" type="video/mp4" />
+          </video>
+
+          <div className="absolute inset-0 bg-[#0A1628]/60" style={{ zIndex: 1 }} />
+
+          <svg className="absolute inset-0 w-full h-full opacity-[0.07] pointer-events-none" style={{ zIndex: 2 }} viewBox="0 0 1440 900" fill="none" stroke="#CAFF00" strokeWidth="0.8" preserveAspectRatio="xMidYMid slice">
+            <rect x="200" y="100" width="1040" height="700" />
+            <line x1="720" y1="100" x2="720" y2="800" />
+            <circle cx="720" cy="450" r="120" />
+            <rect x="400" y="100" width="640" height="180" />
+            <rect x="400" y="620" width="640" height="180" />
+            <line x1="200" y1="450" x2="1240" y2="450" />
+          </svg>
+
+          <div className="relative text-center px-6 max-w-5xl mx-auto" style={{ zIndex: 3 }}>
+            <span className="inline-flex items-center gap-2 px-4 py-2 rounded-full bg-[#CAFF00]/10 border border-[#CAFF00]/30 mb-6">
+              <span className="w-2 h-2 rounded-full bg-[#CAFF00] animate-pulse" />
+              <span className="text-xs font-bold text-[#CAFF00] uppercase tracking-wider">RESERVAS ONLINE · AR</span>
+            </span>
+            <h1 className="text-[clamp(3rem,10vw,8rem)] font-black text-white leading-none tracking-tight font-[family-name:var(--font-bebas-neue)]">
+              TU CANCHA,
             </h1>
-
-            <p className="text-lg md:text-xl text-slate-300 max-w-2xl mx-auto mb-8 font-medium scroll-animate visible">
-              Software de reservas online para complejos deportivos. Tus clientes reservan,
-              vos cobrás, nosotros automatizamos todo.
+            <h1 className="text-[clamp(3rem,10vw,8rem)] font-black text-[#CAFF00] leading-none tracking-tight mb-6 font-[family-name:var(--font-bebas-neue)]">
+              CUANDO QUIERAS
+            </h1>
+            <p className="text-lg md:text-xl text-slate-300 font-medium max-w-xl mx-auto mb-8">
+              Software de reservas online para complejos deportivos.
             </p>
-
-            <div className="flex flex-col sm:flex-row gap-4 justify-center mb-8">
+            <div className="flex gap-4 flex-wrap justify-center mb-8">
               <Link href="/signup">
-                <Button
-                  size="lg"
-                  className="bg-cancha-lima text-cancha-hero hover:bg-cancha-lima-hover font-bold cursor-pointer rounded-lg px-8 py-6 text-lg transition-all duration-300 glow-lima-cta scroll-animate visible"
-                >
-                  Reservar ahora
-                  <ArrowRight className="ml-2 h-5 w-5" />
-                </Button>
+                <button className="bg-[#CAFF00] text-[#0A1628] font-black px-8 py-4 rounded-xl text-lg hover:bg-[#B8FF00] transition-all shadow-[0_0_20px_rgba(202,255,0,0.4)] cursor-pointer">
+                  Reservar ahora →
+                </button>
               </Link>
               <Link href="#funciones">
-                <Button
-                  size="lg"
-                  variant="outline"
-                  className="border-2 border-cancha-lima text-cancha-lima hover:bg-cancha-lima hover:text-cancha-hero font-bold cursor-pointer rounded-lg px-8 py-6 text-lg bg-transparent transition-all duration-300 scroll-animate visible"
-                >
+                <button className="border-2 border-[#CAFF00] text-[#CAFF00] bg-transparent font-bold px-8 py-4 rounded-xl text-lg hover:bg-[#CAFF00]/10 transition-all cursor-pointer">
                   Ver funciones
-                </Button>
+                </button>
               </Link>
             </div>
-
-            <div className="flex items-center justify-center gap-4 scroll-animate visible">
-              {sports.map((sport) => (
-                <span
-                  key={sport}
-                  className="px-4 py-2 rounded-full bg-cancha-card border border-cancha-border text-cancha-lima text-xs font-bold uppercase tracking-widest"
-                >
-                  {sport}
+            <div className="flex gap-3 justify-center">
+              {['FUT', 'PAD', 'VÓL'].map((s) => (
+                <span key={s} className="text-xs font-bold text-[#CAFF00] border border-[#CAFF00]/30 bg-[#CAFF00]/10 px-4 py-2 rounded-full tracking-widest">
+                  {s}
                 </span>
               ))}
             </div>
           </div>
 
-          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce">
-            <ChevronRight className="h-6 w-6 text-slate-300 rotate-90" />
+          <div className="absolute bottom-8 left-1/2 -translate-x-1/2 animate-bounce" style={{ zIndex: 3 }}>
+            <ChevronDown className="h-7 w-7 text-[#CAFF00]" />
           </div>
         </section>
 
-        <AnimatedSection className="py-20 px-4 bg-cancha-section">
-          <div className="max-w-6xl mx-auto">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
-              <StatCard value={2500} suffix="+" label="Complejos activos" />
-              <StatCard value={150000} suffix="+" label="Reservas mensuales" />
-              <StatCard value={98} suffix="%" label="Satisfacción de usuarios" />
+        <section className="relative min-h-[60vh] flex items-center justify-center overflow-hidden">
+          <video
+            autoPlay
+            muted
+            loop
+            playsInline
+            className="absolute inset-0 w-full h-full object-cover"
+            style={{ zIndex: 0 }}
+          >
+            <source src="/videos/hero-pade.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-[#0A1628]/55" style={{ zIndex: 1 }} />
+
+          <div className="relative grid grid-cols-3 gap-4 md:gap-16 text-center max-w-4xl mx-auto px-6 py-20" style={{ zIndex: 2 }}>
+            <div>
+              <div className="text-3xl md:text-6xl font-black text-[#CAFF00] leading-none">500+</div>
+              <div className="text-white font-semibold mt-2 text-xs md:text-lg">Complejos activos</div>
+            </div>
+            <div>
+              <div className="text-3xl md:text-6xl font-black text-[#CAFF00] leading-none">50k+</div>
+              <div className="text-white font-semibold mt-2 text-xs md:text-lg">Reservas mensuales</div>
+            </div>
+            <div>
+              <div className="text-3xl md:text-6xl font-black text-[#CAFF00] leading-none">98%</div>
+              <div className="text-white font-semibold mt-2 text-xs md:text-lg">Satisfacción</div>
             </div>
           </div>
-        </AnimatedSection>
+        </section>
 
-        <AnimatedSection id="como-funciona" className="py-20 px-4 bg-cancha-hero">
-          <div className="max-w-6xl mx-auto">
-            <div className="text-center mb-16">
-              <h2 className="text-4xl md:text-5xl font-black mb-4 text-cancha-texto font-[family-name:var(--font-bebas-neue)]">
-                COMENZA EN 3 PASOS
-              </h2>
-              <p className="text-slate-300 text-lg max-w-2xl mx-auto font-medium">
-                Configurá tu complejo en minutos, sin conocimientos técnicos
-              </p>
-            </div>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
-              {steps.map((step, i) => (
-                <StepCard key={i} {...step} isLast={i === steps.length - 1} delay={i * 100} />
-              ))}
+        <div className="h-16 bg-gradient-to-b from-transparent to-[#0A1628]" />
+
+        <section id="como-funciona" className="relative py-24 overflow-hidden">
+          <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover" style={{ zIndex: 0 }}>
+            <source src="/videos/como-funciona.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-[#0A1628]/82" style={{ zIndex: 1 }} />
+          <div className="relative max-w-6xl mx-auto px-6" style={{ zIndex: 2 }}>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-12 items-center">
+              <div>
+                <h2 className="text-4xl md:text-5xl font-black mb-4 text-[#CAFF00] font-[family-name:var(--font-bebas-neue)]">
+                  COMENZA EN 3 PASOS
+                </h2>
+                <p className="text-slate-300 text-lg mb-10 font-medium">
+                  Configurá tu complejo en minutos, sin conocimientos técnicos
+                </p>
+                <div className="space-y-6">
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#CAFF00] text-[#0A1628] flex items-center justify-center font-black text-lg">1</div>
+                    <div>
+                      <h3 className="text-white font-bold text-lg">Registrá tu complejo</h3>
+                      <p className="text-slate-400 font-medium mt-1">Cargá datos básicos y horarios de atención</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#CAFF00] text-[#0A1628] flex items-center justify-center font-black text-lg">2</div>
+                    <div>
+                      <h3 className="text-white font-bold text-lg">Configurá canchas y precios</h3>
+                      <p className="text-slate-400 font-medium mt-1">Definí canchas, deportes, tarifas y reglas de reserva</p>
+                    </div>
+                  </div>
+                  <div className="flex items-start gap-4">
+                    <div className="flex-shrink-0 w-10 h-10 rounded-full bg-[#CAFF00] text-[#0A1628] flex items-center justify-center font-black text-lg">3</div>
+                    <div>
+                      <h3 className="text-white font-bold text-lg">Compartí y empezá a reservar</h3>
+                      <p className="text-slate-400 font-medium mt-1">Recibí reservas online y gestioná todo desde tu panel</p>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
-        </AnimatedSection>
+        </section>
 
-        <AnimatedSection id="funciones" className="py-20 px-4 bg-cancha-section">
-          <div className="max-w-6xl mx-auto">
+        <div className="h-16 bg-gradient-to-b from-transparent to-[#0A1628]" />
+
+        <div id="funciones" className="relative overflow-hidden">
+          <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover">
+            <source src="/videos/features-bg.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-[#0A1628]/85" />
+          <div className="relative z-10 max-w-6xl mx-auto px-4 py-20">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-black mb-4 text-cancha-texto font-[family-name:var(--font-bebas-neue)]">
                 TODO LO QUE NECESITAS
@@ -616,15 +659,27 @@ export default function LandingPage() {
                 Herramientas diseñadas para simplificar la gestión de tu complejo deportivo
               </p>
             </div>
-            <div className="grid md:grid-cols-2 lg:grid-cols-3 gap-6">
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
               {features.map((feature, i) => (
                 <FeatureCard key={i} {...feature} />
               ))}
             </div>
           </div>
-        </AnimatedSection>
+        </div>
 
-        <AnimatedSection id="precios" className="py-20 px-4 bg-cancha-hero">
+        <div className="h-16 bg-gradient-to-b from-transparent to-[#0A1628]" />
+
+        <AnimatedSection id="precios" className="py-20 px-4 relative parallax-bg"
+          style={{
+            backgroundImage: `
+              linear-gradient(rgba(10,22,40,0.88), rgba(10,22,40,0.90)),
+              url('/images/complejo.jpg')
+            `,
+            backgroundSize: 'cover',
+            backgroundPosition: 'center',
+            backgroundAttachment: 'fixed',
+          }}
+        >
           <div className="max-w-6xl mx-auto">
             <div className="text-center mb-12">
               <h2 className="text-4xl md:text-5xl font-black mb-4 text-cancha-texto font-[family-name:var(--font-bebas-neue)]">
@@ -668,8 +723,14 @@ export default function LandingPage() {
           </div>
         </AnimatedSection>
 
-        <AnimatedSection id="testimonios" className="py-20 px-4 bg-cancha-section">
-          <div className="max-w-6xl mx-auto">
+        <div className="h-16 bg-gradient-to-b from-transparent to-[#0A1628]" />
+
+<div id="testimonios" className="relative overflow-hidden">
+          <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover">
+            <source src="/videos/testimonios-bg.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-[#0A1628]/80" />
+          <div className="relative z-10 max-w-6xl mx-auto px-4 py-20">
             <div className="text-center mb-16">
               <h2 className="text-4xl md:text-5xl font-black mb-4 text-cancha-texto font-[family-name:var(--font-bebas-neue)]">
                 LO QUE DICEN NUESTROS CLIENTES
@@ -684,28 +745,36 @@ export default function LandingPage() {
               ))}
             </div>
           </div>
-        </AnimatedSection>
+        </div>
 
-        <AnimatedSection className="py-20 px-4 bg-cancha-hero">
-          <div className="max-w-4xl mx-auto text-center">
-            <h2 className="text-4xl md:text-6xl font-black mb-6 text-cancha-texto font-[family-name:var(--font-bebas-neue)]">
+        <div className="h-16 bg-gradient-to-b from-transparent to-[#0A1628]" />
+
+        <section className="relative min-h-[600px] flex items-center justify-center overflow-hidden">
+          <video autoPlay muted loop playsInline className="absolute inset-0 w-full h-full object-cover object-bottom" style={{ zIndex: 0 }}>
+            <source src="/videos/cta-bg.mp4" type="video/mp4" />
+          </video>
+          <div className="absolute inset-0 bg-[#0A1628]/78" style={{ zIndex: 1 }} />
+          <div className="relative text-center max-w-4xl mx-auto px-6 w-full" style={{ zIndex: 2 }}>
+            <h2 className="text-5xl md:text-7xl font-black mb-6 text-[#CAFF00] font-[family-name:var(--font-bebas-neue)] leading-tight">
               EMPEZA A GESTIONAR TU COMPLEJO HOY
             </h2>
-            <p className="text-slate-300 text-lg mb-8 max-w-2xl mx-auto font-medium">
-              Registrate gratis y comenzá a recibir reservas en menos de 5 minutos.
-              Sin tarjeta de crédito.
+            <p className="text-slate-200 text-lg mb-10 max-w-2xl mx-auto font-medium">
+              Registrate gratis y comenzá a recibir reservas en menos de 5 minutos. Sin tarjeta de crédito.
             </p>
-            <Link href="/signup">
-              <Button
-                size="lg"
-                className="bg-cancha-lima text-cancha-hero hover:bg-cancha-lima-hover font-bold cursor-pointer rounded-lg px-12 py-6 text-xl transition-all duration-300 glow-lima-cta"
-              >
-                Crear mi cuenta gratis
-                <ArrowRight className="ml-2 h-6 w-6" />
-              </Button>
-            </Link>
+            <div className="flex flex-col sm:flex-row gap-4 justify-center">
+              <Link href="/signup">
+                <button className="bg-[#CAFF00] text-[#0A1628] hover:bg-[#d4ff1a] font-black cursor-pointer rounded-xl px-10 py-6 text-xl transition-all duration-300 w-full sm:w-auto">
+                  Crear mi cuenta gratis
+                </button>
+              </Link>
+              <Link href="/login">
+                <button className="border-2 border-[#CAFF00] text-[#CAFF00] bg-transparent hover:bg-[#CAFF00] hover:text-[#0A1628] font-black cursor-pointer rounded-xl px-10 py-6 text-xl transition-all duration-300 w-full sm:w-auto">
+                  Ya tengo cuenta
+                </button>
+              </Link>
+            </div>
           </div>
-        </AnimatedSection>
+        </section>
       </main>
 
       <footer className="border-t border-cancha-border py-12 px-4 bg-cancha-hero">

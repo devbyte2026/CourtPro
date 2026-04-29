@@ -20,7 +20,6 @@ export const env = z.object({
   SENTRY_AUTH_TOKEN: z.string().optional(),
   NEXT_PUBLIC_APP_URL: z.string().url(),
   NEXT_PUBLIC_APP_DOMAIN: z.string().optional(),
-  NEXT_PUBLIC_APP_NAME: z.string(),
   NEXT_PUBLIC_APP_ENV: z.enum(["development", "production", "test"]).default("development"),
 });
 

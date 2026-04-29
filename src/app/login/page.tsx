@@ -36,9 +36,9 @@ export default function LoginPage() {
         console.log("role:", role, "slug:", slug);
 
         if (role === "owner" && slug) {
-          router.push(`/${slug}/admin`);
+          window.location.href = `/${slug}/admin`;
         } else {
-          router.push("/admin");
+          window.location.href = "/admin";
         }
       } else {
         router.push("/admin");
